@@ -1,0 +1,22 @@
+Detection rule: SUNBURST_-_Dll_signed_with_Solarwind_stolen_certificate_loaded
+
+Description: |
+    This rule triggers an alert if a process loads Solarwind DLL signed with the stolen certifcate.
+    This rule is a complement to the rule "SUNBURST suspicious SolarWinds child processes".
+    The attack is old and was in a all the news for a few weeks, it is unlikely that this rule triggers.
+
+    Action to perform:
+    - Analyze the DLL (location, origin, etc)
+    - Analyze the process lineage"
+
+Technique IDs: 
+    - T1588.003
+    - T1553.002
+
+KQL query: |
+    DeviceImageLoadEvents
+    | where InitiatingProcessFileName has_any ("solarwinds.businesslayerhost.exe","SolarWinds.BusinessLayerHostx64.exe")
+    | where FileName has "SolarWinds.Orion.Core.BusinessLayer.dll"
+    | join (DeviceFileCertificateInfo
+        | where CertificateSerialNumber has ("0fe973752022a606adf2a36e345dc0ed"))//stolen certificate
+        on SHA1

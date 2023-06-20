@@ -1,0 +1,33 @@
+Detection rule: Named_pipe_activity_with_name_matching_Cobalt_Strike_default_naming_convention
+
+Description: |
+    This rule will trigger an alert when the name of a pipe matches the Cobalt Strike default naming convention. 
+    Attacker can change the name but it is not done often.
+    Action to perform:
+    - What processes are involved ?
+    - Analyze those processes (hashes, lineage and activity)
+
+    More information below:
+    - https://thedfirreport.com/2021/08/29/cobalt-strike-a-defenders-guide/
+    - https://www.cobaltstrike.com/blog/learn-pipe-fitting-for-all-of-your-offense-projects/
+    - https://attack.mitre.org/techniques/T1071/
+    - https://attack.mitre.org/techniques/T1572/
+    - https://attack.mitre.org/techniques/T1570/"
+
+Technique IDs: 
+    - T1570
+    - T1071
+    - T1572
+
+KQL query: |
+    let CS_pipe_name_pattern = dynamic(["postex_","postex_ssh_","status_","msagent_","MSSE-"]);
+    DeviceEvents
+    | where ActionType has "NamedPipeEvent"
+    | extend DesiredAccess = tostring(parse_json(AdditionalFields).DesiredAccess)
+    | extend FileOperation = tostring(parse_json(AdditionalFields).FileOperation)
+    | extend NamedPipeEnd = tostring(parse_json(AdditionalFields).NamedPipeEnd)
+    | extend PipeName = tostring(parse_json(AdditionalFields).PipeName)
+    | extend RemoteClientsAccess = tostring(parse_json(AdditionalFields).RemoteClientsAccess)
+    | extend SessionId = tostring(parse_json(AdditionalFields).SessionId)
+    | extend ThreadId = tostring(parse_json(AdditionalFields).ThreadId)
+    | where PipeName matches regex ".+-server$" or PipeName has_any (CS_pipe_name_pattern)

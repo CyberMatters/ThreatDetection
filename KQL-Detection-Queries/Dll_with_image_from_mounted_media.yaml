@@ -1,0 +1,20 @@
+Detection rule: Dll_with_image_from_mounted_media
+
+Description: |
+    This rule triggers an alert when a DLL file, from a mounted media, is loaded.
+    Mounted media could be of any type : USB, ISO file, etc...
+    Action to perform:
+    - Analyze the DLL file itself
+    - Analyze the process loading the DLL
+    - What is the nature of the media that has been mounted ? USB or iso or else ?
+    - where does the media come from ? (attachment ? archive ? external network ?)
+
+Technique IDs: 
+    - T1129
+    - T1553.005
+
+KQL query: |
+    DeviceImageLoadEvents
+    | where FileName endswith ".dll"
+    | where not (FolderPath startswith @"c:\")
+    | where not (FolderPath has_any (@"\SystemRoot\System32\",@"\SystemRoot\SysWOW64\") and FileName has "ntdll.dll")

@@ -1,0 +1,12 @@
+Detection rule: Bypass_User_Account_Control_through_Windows_registry_modification
+
+Description: |
+    This rule will trigger when a process modify registry keys to bypass UAC.
+    see : https://pentestlab.blog/2017/06/07/uac-bypass-fodhelper/
+
+Technique IDs: 
+    - T1548.002
+
+KQL query: |
+    DeviceRegistryEvents
+    | where RegistryKey has_any ("HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command","HKEY_CURRENT_USER\\Software\\Classes\\mscfile\\shell\\open\\command")

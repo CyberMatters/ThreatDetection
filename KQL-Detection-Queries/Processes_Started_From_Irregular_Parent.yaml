@@ -1,0 +1,24 @@
+Detection rule: Processes_Started_From_Irregular_Parent
+
+Description: |
+    This rule will trigger an alert when a critical process is launched with an irregular parent.
+
+Technique IDs: 
+    - T1055.012
+
+KQL query: |
+    DeviceProcessEvents
+    | where (FileName has "smss.exe" and not (FolderPath has "c:\\windows\\system32\\smss.exe" and InitiatingProcessFileName has_any ("smss.exe","System")))
+    or (FileName has "csrss.exe" and not (FolderPath has "c:\\windows\\system32\\csrss.exe" and InitiatingProcessFileName has_any ("smss.exe","svchost.exe")))
+    or (FileName has "wininit.exe" and not (FolderPath has "c:\\windows\\system32\\wininit.exe" and InitiatingProcessFileName has "smss.exe"))
+    or (FileName has "winlogon.exe" and not (FolderPath has "c:\\windows\\system32\\winlogon.exe" and InitiatingProcessFileName has "smss.exe"))
+    or (FileName has "lsass.exe" and not (FolderPath has "c:\\windows\\system32\\lsass.exe" and InitiatingProcessFileName has_any ("wininit.exe"))) 
+    or (FileName has "LogonUI.exe" and not (FolderPath has "c:\\windows\\system32\\LogonUI.exe" and InitiatingProcessFileName has_any ("winlogon.exe","wininit.exe")))
+    or (FileName has "services.exe" and not (FolderPath has "c:\\windows\\system32\\services.exe" and InitiatingProcessFileName has "wininit.exe"))
+    or (FileName has "spoolsv.exe" and not (FolderPath has "c:\\windows\\system32\\spoolsv.exe" and InitiatingProcessFileName has_any ("services.exe","spoolsv.exe")))
+    or (FileName has "taskhost.exe" and not (FolderPath has "c:\\windows\\system32\\taskhost.exe" and InitiatingProcessFileName has_any ("services.exe","svchost.exe"))) 
+    or (FileName has "taskhostw.exe" and not (FolderPath has "c:\\windows\\system32\\taskhostw.exe" and InitiatingProcessFileName has_any ("services.exe","svchost.exe"))) 
+    or (FileName has "userinit.exe" and not (FolderPath has "c:\\windows\\system32\\userinit.exe" and InitiatingProcessFileName has_any ("dwm.exe","winlogon.exe")))
+    or (FileName has "svchost.exe" and not (FolderPath has "c:\\windows\\system32\\svchost.exe" and InitiatingProcessFileName has_any ("svchost.exe","services.exe","msmpeng.exe","mrt.exe")))
+    or (FileName has "runtimeBroker.exe" and not (FolderPath has "c:\\windows\\system32\\runtimeBroker.exe" and InitiatingProcessFileName has_any ("svchost.exe","RuntimeBroker.exe")))
+    or (FileName == "System" and InitiatingProcessFileName != "")

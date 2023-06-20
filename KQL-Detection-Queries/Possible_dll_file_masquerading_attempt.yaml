@@ -1,0 +1,37 @@
+Detection rule: Possible_dll_file_masquerading_attempt
+
+Description: |
+    This rule triggers an alert when a dll file is unexpectedly written to one of the following folders:
+    - C:\WIndows\System32
+    - C:\WIndows\SysWOW64
+    - C:\WIndows\WinSxS
+
+    This could be used by attackers to make a malicious dll appear as legitimate because the image is in a legitimate folder.
+
+    Action to perform:
+    - Analyze the dll file
+    - Analyze the processes involved in the file creation
+
+    Technique Used by North Korean APT37 for example: https://www.securonix.com/blog/stiffbizon-detection-new-attack-campaign-observed/
+
+Technique IDs: 
+    - T1036.005
+
+KQL query: |
+    let folder_to_monitor = dynamic([@"C:\Windows\System32", @"C:\Windows\SysWow64", @"C:\Windows\WinSxS"]);
+    DeviceFileEvents
+    | where ActionType has "FileCreated"
+    | where FileName endswith ".dll"
+    | where FolderPath has_any (folder_to_monitor)
+    | project-away
+        DeviceId,
+        FileSize,
+        ReportId,
+        RequestProtocol,
+        Type,
+        TenantId,
+        SourceSystem,
+        RequestAccountDomain,
+        RequestAccountName,
+        RequestAccountSid
+    | order by TimeGenerated desc

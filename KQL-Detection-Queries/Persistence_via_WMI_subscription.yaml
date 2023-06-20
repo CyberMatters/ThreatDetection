@@ -1,0 +1,24 @@
+Detection rule: Persistence_via_WMI_subscription
+
+Description: |
+    In WMI repository there are 3 classes of interest:
+     - event filter (it is trigger, example is user login)
+     - event consumer (what to do, example is "execute file.exe")
+     - event binder (link a filter with a consumer)
+
+     This rule triggers an alert if an ActiveScript or CommandLine event consumer is bind with an event filter.
+
+     Example:
+     filter: "user logon"
+     CommandLineEventConsumer : "%Temp%\malware.exe"
+
+Technique IDs: 
+    - T1546.003
+
+KQL query: |
+    DeviceEvents
+    | where ActionType has "WmiBindEventFilterToConsumer"
+    | extend possible_cause = parse_json(AdditionalFields)
+    | extend Ess = tostring(parse_json(possible_cause).Ess)
+    | extend Consumer = tostring(possible_cause.Consumer)
+    | where Consumer has_any("ActiveScriptEventConsumer", "CommandLineEventConsumer")

@@ -1,0 +1,19 @@
+Detection rule: Onenote_embedded_executable_file_launched
+
+Description: |
+    This rule triggers an alert when an executatble file embedded in a OneNote document is executed.
+    Notice that upon execution embedded files in OneNote documents are placed into a specific folder in the file system.
+
+    If you see the folder \Exported in the path then that is the case of an embedded file.
+
+    Actions to perform :
+
+    - Analyze the process created by Onenote.exe
+    - Identify the origin of the Onenote document. (email attachment / link ? browsing ?)
+
+Technique IDs: 
+    - T1204.002
+
+KQL query: |
+    DeviceProcessEvents
+    | where FolderPath contains @"OneNote\16.0\Exported\

@@ -1,0 +1,22 @@
+Detection rule: WMI_MOF_file_compiled_with_Pragma_autorecover_attributes
+
+Description: |
+    The pragma autorecover preprocessor command adds a MOF file to the list of files compiled during repository recovery.
+    The list of autorecover MOF files is stored in this registry key:
+
+    HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WBEM\CIMOM\autorecover mofs
+
+    WMI checks the integrity of the WMI repository when the operating system starts WMI.
+    If the repository is damaged, WMI automatically rebuilds the repository and recompiles any MOF files listed in this key in the registry.
+    see : https://docs.microsoft.com/en-us/windows/win32/wmisdk/pragma-autorecover"
+
+Technique IDs: 
+    - T1047
+    - T1546.003
+
+KQL query: |
+    let query1 = DeviceFileEvents
+        | where FolderPath contains @"C:\Windows\System32\wbem\AutoRecover";
+    let query2 = DeviceRegistryEvents
+        | where RegistryKey has @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Wbem\CIMOM" and RegistryValueName has "Autorecover MOFs";
+    union query1, query2

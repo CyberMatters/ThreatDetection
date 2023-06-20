@@ -1,0 +1,25 @@
+Detection rule: Process_image_located_in_external_device
+
+Description: |
+    This rule will trigger an alert when it finds a running process with an image located in an external device.
+
+Technique IDs: 
+    - T1200
+    - T1091
+
+KQL query: |
+    let Windows_devices = DeviceInfo
+        | where OSPlatform contains "windows"
+        | summarize by DeviceName; 
+    DeviceEvents
+    | where DeviceName has_any (Windows_devices)
+    | where ActionType contains "UsbDrive"
+    | extend DriveLetter = tostring(todynamic(AdditionalFields).DriveLetter)
+    | extend Manufacturer = tostring(todynamic(AdditionalFields).Manufacturer)
+    | extend ProductName = tostring(todynamic(AdditionalFields).ProductName)
+    | extend SerialNumber = tostring(todynamic(AdditionalFields).SerialNumber)
+    | project DeviceName, Manufacturer, ProductName, DriveLetter, SerialNumber
+    | join (DeviceProcessEvents
+        | where FolderPath !startswith "c:\\"
+        )
+        on DeviceName

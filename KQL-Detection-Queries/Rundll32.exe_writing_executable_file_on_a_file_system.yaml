@@ -1,0 +1,19 @@
+Detection rule: Rundll32.exe_writing_executable_file_on_a_file_system
+
+Description: |
+    This rule triggers an alert when an exe file is created by rundll32.exe.
+    This can be abused by attackers to bypass some detection.
+
+    Action to perform:
+    - Analyze the written file
+    - Analyze the process calling rundll32.exe
+    - Analyze the dll involved"
+
+Technique IDs: 
+    - T1218.011
+
+KQL query: |
+    DeviceFileEvents
+    | where ActionType contains "FileCreated"
+    | where InitiatingProcessFileName has "rundll32.exe"
+    | where FileName contains ".exe"

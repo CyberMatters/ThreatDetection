@@ -1,0 +1,23 @@
+Detection rule: Possible_ransomware_activity_-_Asymmetrical_encryption_via_PowerShell
+
+Description: |
+    This rule triggers an alert when the Powershell cmdlet Protect-CmsMessage is seen being used. This command is used to encrypt data via a certificate.
+    Action to perform:
+    - Live Response into the device and collect the powershell logs
+    - What is encrypted ?
+    - Is this activity seen on multiple devices/multiple files ?
+    - Analyze the process lineage
+
+    More information below:
+    - Book : "Cybersécurité et PowerShell: De l'attaque à la défense du système d'information" written by Etienne Ladent, published in 2022
+    - https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/protect-cmsmessage?view=powershell-7.2
+    - https://attack.mitre.org/techniques/T1486/
+
+Technique IDs: 
+    - T1486
+
+KQL query: |
+    DeviceEvents
+    | extend Command = tostring(parse_json(AdditionalFields).Command)
+    | where ActionType has "powershellcommand"
+    | where Command has "Protect-CmsMessage"

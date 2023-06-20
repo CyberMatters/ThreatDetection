@@ -1,0 +1,18 @@
+Detection rule: WMIprvse.exe_activity
+
+Description: |
+    This rules will trigger an alert when wmiprvse is seen spawning processes.
+    This means that a command/program is started remotely (WinRM) via WMI.
+    Action to perform:
+    - Analyze the child process
+    - look at the account involved
+
+    More info : https://thedfirreport.com/2022/08/08/bumblebee-roasts-its-way-to-domain-admin/
+
+Technique IDs: 
+    - T1021.006
+    - T1047
+
+KQL query: |
+    DeviceProcessEvents
+    | where InitiatingProcessFileName has "wmiprvse.exe"

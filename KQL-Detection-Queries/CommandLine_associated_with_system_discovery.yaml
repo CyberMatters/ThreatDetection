@@ -1,0 +1,30 @@
+Detection rule: CommandLine_associated_with_system_discovery
+
+Description: |
+    This rule will trigger an alert if CommandLines associated with system discovery are found.
+    These commands, although not requiring any privilege to be ran, are rarely run in OW environment.
+    This could be used by a malware to adapt itself based on the system it has landed on.
+    It could also be used to detect a sandboxing environment (not much CPU/RAM etc)
+
+    Action to perform :
+    - Analyze the processes involved (lineage, hashes, origin)
+
+    More info below:
+    - https://attack.mitre.org/techniques/T1082/
+    - https://attack.mitre.org/techniques/T1497/002/
+
+Technique IDs: 
+    - T1082
+    - T1497.001
+
+KQL query: |
+    let query1 = DeviceEvents
+        | where ActionType has "powershellcommand"
+        | extend Command_ = tostring(AdditionalFields.Command)
+        | where Command_ has "get-computerinfo";
+    let query2 = DeviceProcessEvents
+        | where ProcessCommandLine has "Get-CimInstance" and ProcessCommandLine has "CIM_ComputerSystem"
+            or (ProcessCommandLine contains "get-computerinfo" and not (InitiatingProcessFileName has "UDClientService.exe" and InitiatingProcessFolderPath contains @"c:\windows\system32\drivers\lenovo\udc\service"))
+            or (ProcessCommandLine has "Get-CimInstance" and ProcessCommandLine has "Win32_OperatingSystem")
+            or (ProcessCommandLine has "Get-WmiObject" and ProcessCommandLine has "win32_processor");
+    union query1, query2

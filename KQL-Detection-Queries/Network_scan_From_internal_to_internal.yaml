@@ -1,0 +1,25 @@
+Detection rule: Network_scan_From_internal_to_internal
+
+Description: |
+    This rule raise an alert when an internal device successfully connect to 10 or more internal devices within 15 minutes.
+
+Technique IDs: 
+    - T1595.001
+    - T1590.004
+    - T1590.005
+
+KQL query: |
+    DeviceNetworkEvents
+    | where ActionType == "ConnectionSuccess"
+    | where ipv4_is_private(RemoteIP) and not (RemoteIP == "127.0.0.1" or RemoteIP == LocalIP)
+    | summarize
+        make_set(InitiatingProcessAccountUpn),
+        make_set(InitiatingProcessSHA256),
+        make_set(InitiatingProcessFolderPath),
+        dcount(RemoteIP),
+        make_set(RemoteIP),
+        make_set(RemoteUrl),
+        make_set(RemotePort),
+        make_set(InitiatingProcessCommandLine)
+        by DeviceName, InitiatingProcessFileName, bin(TimeGenerated, 15min)
+    | where dcount_RemoteIP >= 10

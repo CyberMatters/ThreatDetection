@@ -1,0 +1,27 @@
+Detection rule: LOLBAS_used_to_download_files
+
+Description: |
+    This rule detects the use of LOLBAS to download files, possibly second stage payload or other malwares.
+    Please refer to LOLBAS project for any additional details:
+    https://lolbas-project.github.io/#/download
+
+Technique IDs: 
+    - T1105
+
+KQL query: |
+    DeviceProcessEvents
+    | where ProcessCommandLine has_any ("start ms-appinstaller://?")
+    or (ProcessCommandLine has "wsl.exe" and ProcessCommandLine has_any ("curl","wget"))
+    or (ProcessCommandLine has "bitsadmin" and (ProcessCommandLine has_any ("transfer", "addfile"))
+    or (ProcessCommandLine has "certoc" and ProcessCommandLine has "GetCACAPS")
+    or (ProcessCommandLine has "CertReq" and ProcessCommandLine has "Post")
+    or (ProcessCommandLine has "certutil" and ProcessCommandLine has_any ("-urlcache", "-split", "-verifycl"))
+    or (ProcessCommandLine has "cmdl32" and ProcessCommandLine has_any ("/vpn", "/lan"))
+    or (ProcessCommandLine has "desktopimgdownldr" and ProcessCommandLine has ("/lockscreenurl"))
+    or (ProcessCommandLine has "Update" and ProcessCommandLine has_any (" -download", " /download"))
+    or (ProcessCommandLine has "MpCmdRun" and ProcessCommandLine has "DownloadFile")
+    or ((ProcessCommandLine has_any ("diantz", "extrac32", "findstr /V /L", "finger", "GfxDownloadWrapper", "IMEWDBLD", "ieexec", "makecab", "PrintBrm", "PrintBrm", "xwizard", "esentutl") or FolderPath has_any ("ftp.exe", "hh.exe", "replace.exe")) and (ProcessCommandLine has_any ("http", "ftp") or ProcessCommandLine matches regex @".*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d{0,5}){0,1}.*"))
+    or (FolderPath has "expand.exe" and (ProcessCommandLine has_any ("http", "ftp") or ProcessCommandLine matches regex @".*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d{0,5}){0,1}.*")) 
+    or ((ProcessCommandLine startswith "excel.exe" or ProcessCommandLine startswith "Powerpnt.exe" or ProcessCommandLine startswith "winword.exe") and (ProcessCommandLine has_any ("http", "ftp") or ProcessCommandLine matches regex @".*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d{0,5}){0,1}.*"))
+    or (ProcessCommandLine has "squirrel" and (ProcessCommandLine has_any ("http", "ftp ") or ProcessCommandLine matches regex @".*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d{0,5}){0,1}.*"))
+    )

@@ -1,0 +1,27 @@
+Detection rule: Possible_Anomalous_LOLBAS_Activity
+
+Description: |
+    This rule detects the execution of a file which has a LOLBAS name but :
+
+    - is not signed by Microsoft
+    - is not located in the expected folder
+
+    This activity could be strong signal for different possible scenarios such as below (non exhaustive list):
+
+    - File masquerading
+    - ingress tool transfer (from external or lateral movement)
+    
+    Action to perform:
+
+    -Analyze the file (origin, hash, signature,etc...)
+    -Analyze the process lineage
+
+Technique IDs: 
+    - T1105
+    - T1036.005
+
+KQL query: |
+    let Lolbas_FileNames = _GetWatchlist('Lolbas') | project Lolbas_FileName;
+    DeviceProcessEvents
+    | where FileName has_any (Lolbas_FileNames)
+    | where not (ProcessVersionInfoCompanyName has "Microsoft Corporation")

@@ -1,0 +1,13 @@
+Detection rule: File_signed_with_leaked_Nvidia_certificate
+
+Description: |
+    Following the compromise of Nvidia by Lapsus$, a valid Nvidia certificate is used to sign malicious software.
+    The rule will trigger if the certificate is found on a device.
+
+Technique IDs: 
+    - T1588.003
+    - T1553.002
+
+KQL query: |
+    DeviceFileCertificateInfo
+    | where CertificateSerialNumber == "43BB437D609866286DD839E1D00309F5" or IssuerHash == "579AEC4489A2CA8A2A09DF5DC0323634BD8B16B7" or SignerHash == "579AEC4489A2CA8A2A09DF5DC0323634BD8B16B7"

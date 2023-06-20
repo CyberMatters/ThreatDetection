@@ -1,0 +1,22 @@
+Detection rule: net.exe_used_to_add_a_user_to_a_local_group_or_domain_group
+
+Description: |
+    Attackers may use net.exe to add newly created account or compromised standard account to admin groups.
+    This is a persistence, privilege escalation ,initial access and defense evasion technique.
+
+    Below are some actions the analyst can perform:
+
+    - Determine if it make sense for the target user to be in the target group (HR member in domain admin group for example )
+    - Verify the legitimacy of the account in AAD user profile and audit log
+    - Contact the user initiating the action to make sure that she/he is aware of this activity
+
+Technique IDs: 
+    - T1136
+    - T1078
+
+KQL query: |
+    DeviceProcessEvents
+    | where FileName has "net.exe"
+        and (ProcessCommandLine contains "user" or ProcessCommandLine contains "localgroup") 
+        and ProcessCommandLine contains "/add"
+        

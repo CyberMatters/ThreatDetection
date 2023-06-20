@@ -1,0 +1,22 @@
+Detection rule: Procdump_or_Mimikatz_used_to_perform_a_process_full_dump
+
+Description: |
+    This rule will trigger an alert when ProcDump or mimikatz is used to perfrom a full dump on a process (an attacker would dump lsass.exe).
+    This can be used by attacker to dump lsass.exe for instance and extract useful information like credentials.
+    Action to perform:
+    - analyze process lineage
+    - origin of procdump.exe/mimikatz on the device
+
+    see also: https://thedfirreport.com/2022/08/08/bumblebee-roasts-its-way-to-domain-admin/
+
+Technique IDs: 
+    - T1003.001
+
+KQL query: |
+    let query1 = DeviceProcessEvents // ProcDump
+        | where FileName has "procdump.exe"
+        | where ProcessCommandLine contains "-ma";
+    let query2 = DeviceProcessEvents //Mimikatz Minidump
+        | where FileName contains "rundll32.dll"
+        | where ProcessCommandLine contains "comsvcs.dll" and ProcessCommandLine contains "MiniDump";
+    union query1,query2

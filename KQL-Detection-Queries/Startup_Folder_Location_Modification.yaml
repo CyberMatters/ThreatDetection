@@ -1,0 +1,14 @@
+Detection rule: Startup_Folder_Location_Modification
+
+Description: |
+    This rule is designed to detect modification for the 4 registry keys that control the location of the startup folder for the current user and also the all users profiles.
+
+Technique IDs: 
+    - T1547.001
+
+KQL query: |
+    DeviceRegistryEvents
+    | where ActionType == "RegistryValueSet"
+    | where RegistryKey has "Shell Folders"
+    | where RegistryValueName has "Startup"
+    | where RegistryValueData !has @"Microsoft\Windows\Start Menu\Programs\Startup"

@@ -1,0 +1,28 @@
+Detection rule: Hosts_file_hijack
+
+Description: |
+    The Windows hosts file is used to map hostnames to IP addresses.
+    It is a plain text file located in C:\Windows\System32\drivers\etc. 
+    The hosts file will be checked before any other DNS servers. 
+    Malicious actors could leverage the hosts file to accomplish various goals:
+    - Malware can redirect traffic by altering the hosts file, for example facebook.com mapped to a malicious IP address hosting a second-stage payload (ingress tool transfer).
+    - It can also be used to prevent the software on the host from updating themselves, for instance preventing Windows Defender antivirus from updating its signature base (Impair defense).
+    - Lastly, if a service A is dependant on a remote service B, the hosts file could include an entry to map the hostname of the server where service B is hosted to localhost. In this scenario, service A would not be operational anymore (Endpoint Denial of Service).
+
+    Administrative privileges are required to modify/delete the hosts file. 
+    Any successful modification or deletion of the file means that the attacker already has elevated privileges.
+
+    Actions to perform:
+    - Collect the modified hosts file
+    - analyze the content of the file (malicious IP ? sink hole ? malicious domain ?)
+    - analyze the processes involved
+
+Technique IDs: 
+    - T1105
+    - T1562
+    - T1499
+
+KQL query: |
+    DeviceFileEvents
+    | where FolderPath contains @"C:\Windows\System32\drivers\etc\"
+    | where FileName has "hosts"

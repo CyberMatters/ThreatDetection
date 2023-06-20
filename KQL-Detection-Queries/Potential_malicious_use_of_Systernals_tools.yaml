@@ -1,0 +1,29 @@
+Detection rule: Potential_malicious_use_of_Systernals_tools
+
+Description: |
+    This rule will trigger when Systernals Psexec or ShareEnum or Sdelete or ADExplorer are found being used for the first time on a device.
+
+Technique IDs: 
+    - T1136.002
+    - T1543.003
+    - T1570
+    - T1021.002
+    - T1569.002
+    - T1485
+    - T1070.004
+    - T1135
+
+KQL query: |
+    let sha256_list = dynamic(["bdc2b90026135b9b6d7cd79f2f37b51f3c9c6dcac81796958eaf92d527cc5467","72713a51cadad03c81c216081629d323c63b9d1b44f33b5afcffaefa5b479b85","57492d33b7c0755bb411b22d2dfdfdf088cbbfcd010e30dd8d425d5fe66adff4","a9affdcdb398d437e2e1cd9bc1ccf2d101d79fc6d87e95e960e50847a141faa4","e8eaa39e2adfd49ab69d7bb8504ccb82a902c8b48fbc256472f36f41775e594c","5434dfdb731238edcb07a8c3a83594791536dda7a63c29f19be7bb1d59aedd60","24193daf52407a536f63e2c74eb6fc590e8502b059ce14d7d79584cae5a00940","5de2fe59bbc844d958bed9ad27c4bf09d92342b3607059d5598bfe9d86f9395a"]);
+    let query1 = DeviceRegistryEvents
+        | where ActionType has_any ("RegistryKeyCreated", "RegistryValueSet")
+        | where RegistryKey has "Sysinternals" and (RegistryKey contains "psexec"
+            or (RegistryKey contains "shareenum" or RegistryKey contains "share enum")
+            or (RegistryKey contains "sdelete")
+            or (RegistryKey contains "Active Directory Explorer")
+            );
+    let query2 = DeviceProcessEvents
+        | where FileName has_any ("ADExplorer.exe", "ADExplorer64.exe", "PsExec.exe", "PsExec64.exe", "SDelete.exe", "SDelete64.exe", "ShareEnum.exe", "ShareEnum64.exe")
+        or SHA256 in~ (sha256_list)
+        ;
+    union query1,query2

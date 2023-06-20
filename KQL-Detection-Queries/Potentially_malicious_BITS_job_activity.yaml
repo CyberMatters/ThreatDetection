@@ -1,0 +1,23 @@
+Detection rule: Potentially_malicious_BITS_job_activity
+
+Description: |
+    This rule will trigger when BITS activty that could execution or download are detected.
+
+Technique IDs: 
+    - T1197
+
+KQL query: |
+    let query1 = DeviceProcessEvents
+                | where FileName has "bitsadmin.exe" and (ProcessCommandLine contains "/create" 
+                    or ProcessCommandLine contains "/addfile"
+                    or ProcessCommandLine contains "/transfer"
+                    or ProcessCommandLine contains "/setnotifycmdline"
+                    );
+    let query2= DeviceEvents
+                | extend Command = tostring(parse_json(AdditionalFields).Command)
+                | where Command has "Add-BitsFile"
+                or AdditionalFields has "Start-BitsTransfer"
+                or AdditionalFields has "Command"":""New-BitsTransfer"
+                or AdditionalFields has "Command"":""Set-BitsTransfer"
+                ;
+    union query1,query2

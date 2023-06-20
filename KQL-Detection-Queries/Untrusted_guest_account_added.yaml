@@ -1,0 +1,34 @@
+Detection rule: Untrusted_guest_account_added
+
+Description: |
+    This rule triggers an alert when a guest account is created for an unknown domain.
+    Once an account is compromised, an attacker can invite himself/herself as a form of persistence before performing additionnal actions.
+    The rule relies on the watchlist 'partners_domains'.
+    So analysts are expected to update this watchlist when they identify other trusted partners domains.
+
+    Action to perform:
+    - Usual OSINT on the domain (whois, urlscan,VirusTotal,...)
+    - emails form/to the email address (looks legit?)
+    - signin activities (looks legit?)
+    - Add an update request of the watchlist in the tuning spreadheet if relevant
+
+    More info below:
+    - https://techcommunity.microsoft.com/t5/microsoft-365-defender-blog/hunt-for-compromised-azure-subscriptions-using-microsoft/ba-p/3607121
+
+Technique IDs: 
+    - T1136.003
+
+KQL query: |
+    let external_domain_wl = _GetWatchlist('partner_domains') // create the watchlist
+        | project domain;
+    CloudAppEvents
+    | where ActionType == "Add user."
+    | where RawEventData.ResultStatus == "Success"
+    | where RawEventData has "guest" and RawEventData.ObjectId has "#EXT#"
+    | mv-expand Property = RawEventData.ModifiedProperties
+    | where Property.Name == "AccountEnabled" and Property.NewValue has "true"
+    | extend Initiated_by = tostring(RawEventData.UserId)
+    | extend newGuestAccount = tostring(RawEventData.ObjectId)
+    | extend external_domain = extract(@".+_(.+)#EXT#", 1, newGuestAccount)
+    | where not (external_domain has_any (external_domain_wl)) //Domain Exclusion List
+    | project TimeGenerated, Initiated_by, newGuestAccount, external_domain

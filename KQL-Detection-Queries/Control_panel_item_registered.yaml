@@ -1,0 +1,19 @@
+Detection rule: Control_panel_item_registered
+
+Description: |
+    This rule triggers an alert when a Control panel item is registered. This will be visible via registry events.
+    Check the references for more details.
+    
+    Action to perform :
+        - Analyze the CPL being registered ? suspicious origin ? unusual location ?
+        - Analyze the process lineage
+
+    References : https://learn.microsoft.com/en-us/windows/win32/shell/how-to-register-dll-control-panel-item-registration-
+
+Technique IDs: 
+    - T1218.002
+
+KQL query: |
+    DeviceRegistryEvents
+    | where RegistryKey has @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Cpls"
+    | where ActionType has_any ("RegistryKeyCreated","RegistryValueSet")

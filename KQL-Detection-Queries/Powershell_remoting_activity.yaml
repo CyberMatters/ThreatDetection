@@ -1,0 +1,43 @@
+Detection rule: Powershell_remoting_activity
+
+Description: |
+    This rule triggers an alert when some powershell remoting related activity (lateral movement).
+    It could be one or many of the below:
+    - (visible from dest) Enabling interactive Powershell remoting
+    - (visible from dest) Starting Windows Remote Management service/task
+    - (visible from src) Establishing remote Powershell session
+    - (visible from src) Network traffic to port 5985 (WinRM-HTTP) and 5986 (WinRM-HTTPS)
+
+    All these behaviors have been gathered in one rule in order to help the analyst understand the big picture quickly.
+
+    Actions to perform:
+    - Identify the source/dest host and analyze determine legitimacy
+    - See also:
+        - https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/winrmsecurity?view=powershell-7.2
+        - https://docs.microsoft.com/en-us/powershell/scripting/learn/ps101/08-powershell-remoting?view=powershell-7.2"
+
+Technique IDs: 
+    - T1021.006
+
+KQL query: |
+    // (dest) Enabling interactive Powershell remoting
+    let ps_remoting_enabled = DeviceEvents 
+        | where ActionType contains "powershell"
+        | extend command = tostring(parse_json(AdditionalFields).Command)
+        | where command contains "Enable-PSRemoting";
+    // (dest) Starting Windows Remote Management service/task
+    let WSM_started = DeviceProcessEvents
+        | where FileName has "wsmprovhost.exe";
+    // (src) Establishing remote Powershell session
+    let ps_remoting_session = DeviceEvents
+        | where ActionType contains "powershell"
+        | extend command = tostring(parse_json(AdditionalFields).Command)
+        | where command contains "Enter-PSSession";
+    // (src) Network traffic to port 5985 (WinRM-HTTP) and 5986 (WinRM-HTTPS)
+    let PS_session_network = DeviceNetworkEvents
+        //| where InitiatingProcessFileName contains "powershell"
+        | where RemotePort in (5985, 5986)
+        | where not (RemoteIP == LocalIP)
+        | where not (RemoteIPType has "Loopback");
+    union WSM_started, ps_remoting_enabled, ps_remoting_session, PS_session_network
+    | order by TimeGenerated desc

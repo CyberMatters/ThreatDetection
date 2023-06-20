@@ -1,0 +1,20 @@
+Detection rule: Attempt_to_steal_Microsoft_Teams_clear-text_authentication_token
+
+Description: |
+    This rule triggers an alert when a command lines contains the folders containing MS Teams clear-text tokens.
+    With this information, an attcker could further connect to Teams as the victim.
+
+    Actions to perform:
+    - Check process lineage
+    - Understand the command line
+    - Is there a legitimate reason why the process is manipulating the data in the folders ?
+
+    More info: https://www.bleepingcomputer.com/news/security/microsoft-teams-stores-auth-tokens-as-cleartext-in-windows-linux-macs/
+
+Technique IDs: 
+    - T1552.001
+
+KQL query: |
+    DeviceProcessEvents
+    | where (ProcessCommandLine contains @"\Microsoft\Teams\Cookies" or ProcessCommandLine contains @"Microsoft\Teams\Local Storage\leveldb") or //Windows OS
+    (ProcessCommandLine contains "/Library/Application Support/Microsoft/Teams/Cookies" or ProcessCommandLine contains "/Library/Application Support/Microsoft/Teams/Local Storage/leveldb") //Mac OS

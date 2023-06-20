@@ -1,0 +1,34 @@
+Detection rule: Suspicious_location_CPL_file_executed
+
+Description: |
+    This rule triggers an alert when a control panel item that is not located in C:\windows\system32 is run.
+    Those CPL files can contain malicious code.
+
+Technique IDs: 
+    - T1218.002
+
+KQL query: |
+    let cpl_exec_via_control_exe = DeviceProcessEvents
+        | where FileName has "control.exe"
+        | where ProcessCommandLine matches regex @"\\.+\.cpl"
+        | where not (ProcessCommandLine matches regex @"C:\\(windows|Windows|WINDOWS)\\(system32|System32)\\.+\.cpl");
+    let cpl_exec_via_rundll32_exe = DeviceProcessEvents
+        | where FileName has "rundll32.exe"
+        | where ProcessCommandLine contains "shell32.dll"
+        | where ProcessCommandLine has_any ("Control_RunDLL", "Control_RunDLLAsUser")
+        | where ProcessCommandLine matches regex @"\\.+\.cpl.+"
+        | where not (ProcessCommandLine matches regex @"C:\\(windows|Windows|WINDOWS)\\(system32|System32)\\.+\.cpl");
+    union cpl_exec_via_control_exe, cpl_exec_via_rundll32_exe
+    | project-away
+        AccountDomain,
+        InitiatingProcessAccountDomain,
+        AccountSid,
+        InitiatingProcessAccountSid,
+        DeviceId,
+        LogonId,
+        InitiatingProcessLogonId,
+        ProcessTokenElevation,
+        InitiatingProcessTokenElevation,
+        ProcessIntegrityLevel,
+        InitiatingProcessIntegrityLevel,
+        SourceSystem

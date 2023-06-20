@@ -1,0 +1,19 @@
+Detection rule: svchost.exe_or_taskhostw.exe_spawning_cmd_or_powershell
+
+Description: |
+    Attackers may use services as an execution/persistence mechanism or scheduled tasks to trigger an action when it is the right moment.
+    This rule triggers an alert if cmd or powershell are spawned by svchost.exe (service) or taskhostw.exe (task).
+
+    Action to perform:
+    - analyze the commandline, is it legitimate ?
+    - Identify what process has created the service/task (via logs or MDE investigation package)
+
+
+Technique IDs: 
+    - T1053.005
+    - T1569.002
+
+KQL query: |
+    DeviceProcessEvents
+    | where InitiatingProcessFileName has_any ("svchost.exe", "taskhostw.exe")
+    | where FileName has_any ("cmd.exe", "powershell.exe", "pwsh.exe")

@@ -1,0 +1,25 @@
+Detection rule: APT29_Campaign_leveraging_cloud_storage
+
+Description: |
+    This rule will trigger an alert if some process and file activities are similar to those seen in the recent campaigns leveraging popular cloud storage to deliver payload.
+
+    Action to perform:
+    - analyze network connections,loaded dll,process lineage
+    - Refer to the Malware reaction plan if needed.
+
+    See also: https://unit42.paloaltonetworks.com/cloaked-ursa-online-storage-services-campaigns/
+
+Technique IDs: 
+    - T1027.006
+    - T1547.001
+
+KQL query: |
+    let file_dropping = DeviceFileEvents
+        | where FileName has_any ("agenda.exe", "vcruntime14.dll", "vctool140.dll")
+        | where FolderPath has @"\AppData\Roaming\";
+    let agenda_process = DeviceProcessEvents
+        | where FileName has "agenda.exe";
+    let registry_activity = DeviceRegistryEvents
+        | where RegistryKey contains @"\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+        | where RegistryValueName has_any ("AgendaE", "AdobeUpdate");
+    union file_dropping, agenda_process, registry_activity

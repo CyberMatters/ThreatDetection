@@ -1,0 +1,18 @@
+Detection rule: Process_injection_-_Powershell.exe_or_cmd.exe_accessing_another_process
+
+Description: |
+    This rule will trigger an alert when a process is accessed by Powershell.exe or cmd.exe.
+    This is done by using the system call OpenProcess().
+
+    Action to perform:
+    - Analyze all the activities performed by the PS/cmd process (using the PID)
+    - if Sentinel does not give enough information, proceed to Windows event logs analysis.
+    - Identify the parent of the PS/CMD process, determine its legitimacy and analyze its activity
+
+Technique IDs: 
+    - T1055
+
+KQL query: |
+    DeviceEvents
+    | where ActionType has "OpenProcessApiCall"
+    | where InitiatingProcessFileName has_any ("powershell.exe", "cmd.exe", "pwsh.exe")

@@ -1,0 +1,52 @@
+Detection rule: Attempt_to_achieve_persistence_through_Windows_registries_modification
+
+Description: |
+    This rule detects the modification of the registries to achieve persistence on a device.
+    Many persistence techniques were described in the book 'Windows Registry Forensics: Advanced Digital Forensic Analysis of the Windows Registry' written by Harlan Carvey.
+
+Technique IDs: 
+    - T1547.004
+    - T1546.012
+    - T1546.010
+    - T1574.001
+    - T1547.001
+    - T1546.009
+    - T1547.002
+    - T1547.003
+    - T1547.005
+    - T1546.002
+    - T1546.007
+    - T1037.001
+    - T1547.014
+    - T1176
+    - T1547.001
+    
+KQL query: |
+    DeviceRegistryEvents
+    | where (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" and RegistryValueName == "Notify") //execute X when specific conditions are met
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" and RegistryValueName == "Userinit") //execute X when user logon
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" and RegistryValueName == "Shell") //execute X when user logon
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options" and RegistryValueName == "Debugger")//execute X instead of Y
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options" and RegistryValueData has_any ("200","0x200"))//set MONITOR_SILENT_PROCESS_EXIT flag
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit") //configure actions on silent exit (eg. execute x)
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows" and RegistryValueName == "AppInit_DLLs") //load X.dll in (almost)each process
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Windows" and RegistryValueName == "AppInit_DLLs")//load X.dll in (almost)each process
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows" and RegistryValueName has "LoadAppInit_DLLs")//enable AppInitDll
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Windows" and RegistryValueName has "LoadAppInit_DLLs")//enable AppInitDll
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\KnownDLLs") //directly points to malicious DLL path
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager" and RegistryValueName == "BootExecute")//execute X at boot time
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\" and RegistryValueName == "Authentication Packages")//execute X at boot time
+    or RegistryKey has "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\W32Time\\TimeProviders"//Execute x.dll at boot time
+    or RegistryKey has_any ("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\Security Packages","HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\OSConfig\\Security Packages")//Execute x.dll at boot time
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\OSConfig\\Security Packages")//Execute x.dll at boot time
+    or (RegistryKey has "HKEY_CURRENT_USER\\Control Panel\\Desktop" and RegistryValueName has_any ("SCRN","Screen"))//Execute x when user is inactive
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Netsh")//Execute x.dll when netsh.exe (netshell) is executed
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Session Manager\\AppCertDLLs") //injected into process calling CreateProcess, CreateProcessAsUser, etc ...
+    or (RegistryKey has "HKEY_CURRENT_USER\\Environment\\UserInitMprLogonScript") //used by APT28 to execute a script when user logon
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Active Setup\\Installed Components\\" and RegistryValueName == "StubPath") //execute X when user logon - cmd lines for OpenVPN also excluded here
+    or (RegistryKey has "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Browser Helper Objects") //execute X when using browser 
+    or (RegistryKey startswith "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree")
+    or (RegistryKey == "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run")
+    or (RegistryKey == "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce")
+    or (RegistryKey == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run")
+    or (RegistryKey == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce")

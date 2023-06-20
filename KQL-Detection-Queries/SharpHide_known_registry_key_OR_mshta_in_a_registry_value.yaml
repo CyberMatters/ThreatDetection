@@ -1,0 +1,27 @@
+Detection rule: SharpHide_known_registry_key_OR_mshta_in_a_registry_value
+
+Description: |
+    This rule will trigger an alert if the key "Shell" is found in a \SOFTWARE\Microsoft\Windows\CurrentVersion\Run\ registry path.
+    This is not a native key so the name is intentionally legit looking to confuse analyst.
+    This rule will also trigger an alert if mshta is seen in a registry key value.
+    These combined techniques are used in the Modern Loader campaign (link at the end).
+    It could also be used by other adversaries.
+
+    Actions to perform:
+    - Analyze the registry value (malicious command?)
+    - Analyze the initiatingProcess lineage (malicious file?)
+
+    More info below:
+    - https://blog.talosintelligence.com/2022/08/modernloader-delivers-multiple-stealers.html
+
+Technique IDs: 
+    - T1547.001
+
+KQL query: |
+    let query1 = DeviceRegistryEvents
+        | where RegistryKey has @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+        | where RegistryValueName has "shell";
+    let query2 = DeviceRegistryEvents
+        | where RegistryValueData contains "mshta";
+    union query1,query2
+    | project-away InitiatingProcessAccountDomain,InitiatingProcessAccountObjectId,InitiatingProcessAccountSid,InitiatingProcessIntegrityLevel,InitiatingProcessTokenElevation,ReportId,Type,TenantId,SourceSystem

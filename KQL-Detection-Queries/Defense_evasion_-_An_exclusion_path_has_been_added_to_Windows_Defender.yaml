@@ -1,0 +1,17 @@
+Detection rule: Defense_evasion_-_An_exclusion_path_has_been_added_to_Windows_Defender
+
+Description: |
+    This rule triggers an alert when the powershell cmdlet Add-MpPreference is used to add an exclusion path to defender.
+    In a campaign highlighted by CISA, an Iranian state-sponsored APT OIlRig added the path C:\ as an exclusion which resulted in successfully whitelisting the entire C:\ drive.
+
+    Action to perform:
+    - Analyse the process lineage
+      - is it part of the installation of a legit software?
+
+Technique IDs: 
+    - T1059.001
+    - T1562
+
+KQL query: |
+    DeviceProcessEvents
+    | where ProcessCommandLine contains "Add-MpPreference" and  ProcessCommandLine contains "-ExclusionPath"

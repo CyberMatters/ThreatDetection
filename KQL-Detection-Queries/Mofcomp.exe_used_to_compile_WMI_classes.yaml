@@ -1,0 +1,19 @@
+Detection rule: Mofcomp.exe_used_to_compile_WMI_classes
+
+Description: |
+    In WMI repository there are 3 classes of interest:
+
+    - event filter (it is trigger, example is user login)
+    - event consumer (what to do, example is "execute file.exe")
+    - event binder (link a filter with a consumer)
+    
+    A Mof file is a config file that describes the 3 classes.
+    It needs to be compiled using mofcomp.exe that will add those classes into the WMI repository.
+
+Technique IDs: 
+    - T1047
+    - T1546.003
+
+KQL query: |
+    DeviceProcessEvents
+    | where FileName has "mofcomp.exe"

@@ -1,0 +1,22 @@
+Detection rule: Unexpected_or_Rare_Network_Connection_from_Local_Process
+
+Description: |
+    The rule will trigger an alert when a process that normally does not (or rarely) initiate a network connection is doing it.
+    This could be a sign of :
+    - Process injection (injected dll to a process that normally does not automatically load a DLL with a function handling network connection for example)
+    - Masquerading (malware.exe renames itself as notepad.exe to evade detection based on filenames and make investigations harder)
+
+    Action to perform:
+    - Is the process legitimate ? (folderPath,hash, parents, etc)
+    - What are the dll loaded by the process? (dll folder path, difference with other computers,...)
+
+Technique IDs: 
+    - T1055
+    - T1036
+
+KQL query: |
+    let process = dynamic(["calc.exe","notepad.exe","smss.exe","wininit.exe","winlogon.exe","LogonUI.exe","taskhost.exe","userinit.exe","dwm.exe","System.exe","regedit.exe","HelpPane.exe","DismHost.exe","schtasks.exe","at.exe","sc.exe","ngentask.exe","reg.exe","DiskSnapshot.exe","ipconfig.exe","drvinst.exe","wslhost.exe","Defrag.exe","mofcomp.exe","taskkill.exe","sihost.exe","wlrmdr.exe","runonce.exe"]);
+    DeviceNetworkEvents
+    | where ActionType has "ConnectionSuccess"
+    | where not (RemoteIP has_any ("127.0.0.1","::1") or RemoteUrl startswith "localhost" or RemoteUrl contains "//localhost")
+    | where InitiatingProcessFileName has_any (process)

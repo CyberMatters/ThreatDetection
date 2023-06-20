@@ -1,0 +1,16 @@
+Detection rule: Browser_or_Office_apps_writing_potentially_malicious_files
+
+Description: |
+    This rules monitor files extensions of the file written by browsers or Office apps.
+    This is an attempt to detect malicious file downloaded after clicking on a phishing link or during browsing (watering hole attack)
+
+Technique IDs: 
+    - T1189
+    - T1566.002
+
+KQL query: |
+    DeviceFileEvents
+    | where ActionType == "FileCreated"
+    | where not (FolderPath has_any (@"\AppData\Local", @"C:\Users\local_"))
+    | where InitiatingProcessFileName has_any ("chrome.exe", "msedge.exe", "firefox.exe", "outlook.exe", "excel.exe", "winword.exe","onenote.exe") 
+    | where FileName matches regex @"(\.vbe|\.bat|\.cmd|\.wsh|\.ps1|\.hta|\.img|\.iso|\.7z|\.msi|\.tar|\.jar|\.rar|\.scr|\.exe|\.dll|\.sys|\.zix|\.vbs|\.bin|\.ws|\.drv|\.xlm|\.dev|\.vxd|\.vb|\.py|\.lnk|\.js)$"

@@ -1,0 +1,31 @@
+Detection rule: PSexec_activity
+
+Description: |
+    This rule will trigger an alert if there is activity related to Systernals PSexec.
+    Action to perform:
+    - Check the target (lateral movement)
+      - What actions were performed on the target?
+    - How did psExec arrived on the source device?
+
+    More info below:
+    - https://attack.mitre.org/software/S0029/
+    - https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
+
+Technique IDs: 
+    - T1136.002
+    - T1543.003,
+    - T1570
+    - T1021.002
+    - T1569.002
+
+KQL query: |
+    let query1 = DeviceFileEvents
+        | where FileName has_any ("PSEXESVC.exe", "psexec.exe");
+    let query2 = DeviceProcessEvents
+        | where FileName has_any ("PSEXESVC.exe", "psexec.exe");
+    let query3 = DeviceRegistryEvents
+        | where ActionType has_any ("RegistryKeyCreated", "RegistryValueSet")
+        | where RegistryKey has "Sysinternals" and (RegistryKey has "psexec");
+    let query4 = DeviceNetworkEvents
+        | where InitiatingProcessFileName has_any ("PSEXESVC.exe", "psexec.exe");
+    union query1,query2,query3,query4

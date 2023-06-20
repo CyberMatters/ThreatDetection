@@ -1,0 +1,20 @@
+Detection rule: Scheduled_task_created_-_Windows_events
+
+Description: |
+    This rule will trigger an alert when a schedule task is created.
+    Based on event ID 4698.
+    Actions to perform:
+    - Analyze the command
+    - Analyze the file being executed
+
+Technique IDs: 
+    - T1053
+
+KQL query: |
+    SecurityEvent
+    | where EventID == 4698 // scheduled task created
+    | extend Parsed = parse_xml(EventData)
+    | extend extracted = tostring(Parsed.EventData.Data[5])
+    | extend command = extract("(<Command>)(.*?)(</Command>)", 2, extracted)
+    | extend args = extract("(<Arguments>)(.*?)(</Arguments>)", 2, extracted)
+    | where not (isempty(command))

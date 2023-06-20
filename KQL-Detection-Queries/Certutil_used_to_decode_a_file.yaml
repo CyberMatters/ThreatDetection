@@ -1,0 +1,15 @@
+Detection rule: Certutil_used_to_decode_a_file
+
+Description: |
+    This rule will trigger an alert if Lolbas Certutil.exe is used to decode a file.
+    This could be used to decode a payload that has been hex or base64 encoded.
+    More information below:
+    - https://www.bleepingcomputer.com/news/security/winnti-hackers-split-cobalt-strike-into-154-pieces-to-evade-detection/
+    - https://attack.mitre.org/techniques/T1140/"
+
+Technique IDs: 
+    - T1140
+
+KQL query: |
+    DeviceProcessEvents
+    | where ProcessCommandLine has "certutil" and ProcessCommandLine has "-decode"

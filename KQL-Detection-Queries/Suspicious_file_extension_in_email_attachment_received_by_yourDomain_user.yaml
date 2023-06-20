@@ -1,0 +1,16 @@
+Detection rule: Suspicious_file_extension_in_email_attachment_received_by_yourDomain_user
+
+Description: |
+    This alert will trigger when yourDomain user receive an email containing an attachment with suspicious file extension.
+    Note that Microsoft Defender can only deep analyze exe and dll files.
+
+Technique IDs: 
+    - T1566.001
+
+KQL query: |
+    EmailAttachmentInfo
+    | where RecipientEmailAddress endswith "yourDomain.com"
+    | where FileName matches regex @"(\.vbe|\.bat|\.cmd|\.wsh|\.ps1|\.hta|\.img|\.iso|\.7z|\.msi|\.tar|\.jar|\.rar|\.js|\.com|\.scr|\.lnk|\.exe|\.dll|\.sys|\.zix|\.vbs|\.bin|\.ws|\.drv|\.xlm|\.dev|\.vxd|\.vb|\.py)$"
+    | join EmailEvents on NetworkMessageId
+    | where SenderFromDomain !~ "oneweb.net"
+    | where DeliveryLocation !in ("Quarantine", "Dropped", "Failed")

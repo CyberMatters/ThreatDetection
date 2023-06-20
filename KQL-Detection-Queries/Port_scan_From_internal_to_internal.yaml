@@ -1,0 +1,24 @@
+Detection rule: Port_scan_From_internal_to_internal
+
+Description: |
+    The rule detects a port scan from an internal host that targets another internal device.
+
+Technique IDs: 
+    - T1595.002
+    - T1046
+
+KQL query: |
+    DeviceNetworkEvents
+    | where ipv4_is_private(RemoteIP)
+        and not (ActionType == "NetworkSignatureInspected")
+        and RemoteIP != LocalIP
+    | summarize
+        make_set(ActionType),
+        make_set(RemoteUrl),
+        dcount(RemotePort),
+        make_set(RemotePort),
+        make_set(InitiatingProcessParentFileName),
+        make_set(InitiatingProcessSHA256),
+        make_set(InitiatingProcessAccountUpn)
+        by DeviceName, RemoteIP, InitiatingProcessCommandLine, bin(TimeGenerated, 1h)
+    | where dcount_RemotePort >= 15

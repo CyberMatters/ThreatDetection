@@ -1,0 +1,22 @@
+Detection rule: MSHTA.EXE_activity_-_download_and-or_execution
+
+Description: |
+    This rule will trigger an alert when there is an activity from mshta.exe which is rare in OW environment.
+    This could be used by an attacker to download and execute payloads.
+    Actions to perform:
+    - Analyze the target (malicious file / IP / URL?)
+    - Analyze the process lineage
+
+    More info below:
+    - https://attack.mitre.org/techniques/T1218/005/
+    - https://lolbas-project.github.io/lolbas/Binaries/Mshta/
+
+Technique IDs: 
+    - T1218.005
+
+KQL query: |
+    let query1 = DeviceProcessEvents
+        | where ProcessCommandLine has "mshta.exe";
+    let query2 = DeviceNetworkEvents
+        | where InitiatingProcessCommandLine has "mshta.exe";
+    union query1,query2

@@ -1,0 +1,41 @@
+Detection rule: Port_listening_or_redirection-forwarding
+
+Description: |
+    This rule triggers an alert when a port is set to :
+    - listen for incoming connection or
+    - redirect/forward packets
+
+    This could be linked to an attacker trying to :
+    - turn a host into a pivot to exfiltrate data or
+    - set up a specific port for C2 communications
+
+    Action to perform :
+    - Analyze the process initiating the action (lineage, hashes, etc...)
+    - Analyze the commandLine
+      - Are the target destination endpoint and port expected ? (public/private? owned by OW ? standard port ? malicious ?)
+
+    More info below:
+    - https://attack.mitre.org/techniques/T1571/
+    - https://attack.mitre.org/techniques/T1090/001/
+
+Technique IDs: 
+    - T1571
+    - T1090.001
+
+KQL query: |
+    let query1 = DeviceProcessEvents
+        | where ProcessCommandLine contains "http.server" //python3 -m http.server
+        or (ProcessCommandLine contains "System.Net.HttpListener") //Powershell command New-Object System.Net.HttpListener
+        or (ProcessCommandLine contains "System.Net.Sockets.TcpListener") //Powershell command New-Object System.Net.Sockets.TcpListener
+        or (ProcessCommandLine contains "System.Net.Sockets.TcpClient") //Powershell command New-Object System.Net.Sockets.TcpClient
+        or (ProcessCommandLine contains "AcceptTcpClient") //Powershell method AcceptTcpClient
+        or (ProcessCommandLine startswith "nc " or ProcessCommandLine contains " nc -") //netcat -l for listening
+        or (ProcessCommandLine contains "netsh" and ProcessCommandLine contains "connectaddress")
+        | where not (ProcessCommandLine startswith "\"WINWORD.EXE\"");
+    let query2 = DeviceEvents
+        | where ActionType has "PowerShellCommand"
+        | extend Command_ = tostring(AdditionalFields.Command)
+        | where Command_ has "new-object"
+        | where InitiatingProcessCommandLine has_any ("System.Net.HttpListener","System.Net.Sockets.TcpListener","System.Net.Sockets.TcpClient","AcceptTcpClient");
+    union query1,query2
+    | project-away AccountDomain,AccountObjectId,AccountSid,ActionType,DeviceId,InitiatingProcessAccountDomain,InitiatingProcessAccountObjectId,InitiatingProcessAccountSid,ProcessIntegrityLevel,InitiatingProcessIntegrityLevel,ProcessTokenElevation,LogonId,InitiatingProcessLogonId,InitiatingProcessTokenElevation,ReportId,Type,SourceSystem

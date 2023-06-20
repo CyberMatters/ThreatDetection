@@ -1,0 +1,12 @@
+Detection rule: Attempt_to_achieve_persistence_through_startup_folders
+
+Description: |
+    This rule detects file activity in Windows startup folders.
+    Although some behaviors are legitimate, these location are often abused by APTs including Sandworm, APT28 and APT10
+
+Technique IDs:
+    - T1547.001
+
+KQL query: |
+    DeviceFileEvents
+    | where FolderPath contains "\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"

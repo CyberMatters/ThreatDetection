@@ -1,0 +1,35 @@
+Detection rule: Fast_MFA_fatigue_over_30_min
+
+Description: |
+    This rule will trigger an alert if there is more than 5 unsuccessful MFA challenge within 30 min for a single user.
+    This would potentially be more than 1 notification every 3 min.
+    The idea of the technique is to generate a lot of MFA notifications for the targeted user in hope that the potential victim approve the connection 
+    because of the generated annoyance and fatigue.
+
+    Action to perform:
+    - Investigate the signin logs
+    - If there is any doubt, contact the user and make sure that she/he did not approve a random MFA request because there were too many.
+
+Technique IDs: 
+    - T1621
+    - T1078.004
+
+KQL query: |
+    SigninLogs 
+    | extend AuthResult = tostring(parse_json(AuthenticationDetails)[1].authenticationStepResultDetail)
+    | where AuthResult in ("MFA denied; user declined the authentication", "MFA denied; user did not respond to mobile app notification")
+    | extend authMethod_ = tostring(MfaDetail.authMethod)
+    | extend countryOrRegion_ = tostring(LocationDetails.countryOrRegion)
+    | extend city_ = tostring(LocationDetails.city)
+    | summarize
+        count(),
+        make_set(AuthResult),
+        make_set(IPAddress),
+        make_set(countryOrRegion_),
+        make_set(city_),
+        make_set(AppDisplayName),
+        make_set(ClientAppUsed),
+        make_set(UserAgent),
+        make_set(TimeGenerated)
+        by bin(TimeGenerated, 30m), UserPrincipalName
+    | where count_ >= 5

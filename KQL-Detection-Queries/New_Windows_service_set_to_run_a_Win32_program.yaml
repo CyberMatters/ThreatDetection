@@ -1,0 +1,26 @@
+Detection rule: New_Windows_service_set_to_run_a_Win32_program
+
+Description: |
+    This rule will trigger an alert when a service is created and set to run a program.
+    Action to perform:
+    - Analyze the process lineage
+    - Analyze the program that will be automatically started
+
+    More information below:
+    - https://attack.mitre.org/techniques/T1569/002/
+    - https://attack.mitre.org/techniques/T1543/003/
+    - https://thedfirreport.com/2022/08/08/bumblebee-roasts-its-way-to-domain-admin/
+
+Technique IDs: 
+    - T1543.003
+    - T1569.002
+
+KQL query: |
+    DeviceEvents
+    | where ActionType has "ServiceInstalled"
+    | extend ServiceName = tostring(parse_json(AdditionalFields).ServiceName)
+    | extend ServiceAccount = tostring(parse_json(AdditionalFields).ServiceAccount)
+    | extend ServiceStartType = tostring(parse_json(AdditionalFields).ServiceStartType)
+    | extend ServiceType = tostring(parse_json(AdditionalFields).ServiceType)
+    | where ServiceStartType has_any("1", "2") // automatically started
+    | where ServiceType has_any ("16", "32") // win32 program execution

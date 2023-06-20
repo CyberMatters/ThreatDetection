@@ -1,0 +1,22 @@
+Detection rule: Fast_beaconing_or_attacker_interacting_manually_with_a_victim_device
+
+Description: |
+    This rule will trigger an alert if a device is involved in more than 100 network connections (success or failures) to a single IP address and same url within 1 minute.
+    This could be a sign of fast beaconing (Cobalt Strike calling home for example) or an attacker performing activities interactively.
+
+    Action to perform:
+    - Analyze the IP / URL
+    - Analyze the processes involved
+
+Technique IDs: 
+    - T1102.002
+    - T1071.001
+    - T1071.004
+
+KQL query: |
+    DeviceNetworkEvents
+    | where ActionType has_any ("ConnectionSuccess","ConnectionRequest","ConnectionFailed")
+    | where RemotePort in (80,443,53)
+    | where not ( ipv4_is_in_range(RemoteIP, "10.0.0.0/8") or ipv4_is_in_range(RemoteIP, "172.16.0.0/12") or ipv4_is_in_range(RemoteIP, "192.168.0.0/16") or ipv4_is_in_range(RemoteIP, "0.0.0.0/8") or ipv4_is_in_range(RemoteIP, "100.64.0.0") or ipv4_is_in_range(RemoteIP, "127.0.0.0/8") or ipv4_is_in_range(RemoteIP, "192.0.0.0/24") or ipv4_is_in_range(RemoteIP, "192.88.99.0/24") or ipv4_is_in_range(RemoteIP, "198.18.0.0/15") or ipv4_is_in_range(RemoteIP, "198.51.100.0/24") or ipv4_is_in_range(RemoteIP, "203.0.113.0/24") or ipv4_is_in_range(RemoteIP, "224.0.0.0/4") or ipv4_is_in_range(RemoteIP, "240.0.0.0/4") or ipv4_is_in_range(RemoteIP, "255.255.255.255"))
+    | summarize count(),dcount(RemoteUrl),make_set(RemotePort),make_set(Protocol),make_set(RemoteUrl),make_set(InitiatingProcessFolderPath),make_set(InitiatingProcessCommandLine),make_set(InitiatingProcessId),make_set(InitiatingProcessSHA1),make_set(InitiatingProcessParentFileName),make_set(InitiatingProcessParentId) by DeviceName,RemoteIP, bin(TimeGenerated,1min)
+    | where count_ > 100 and dcount_RemoteUrl <= 1

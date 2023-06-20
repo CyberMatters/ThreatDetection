@@ -1,0 +1,12 @@
+Detection rule: Process_hidding_file_or_folder
+
+Description: |
+    This rule will trigger an alert when a process hides a file or folder.
+    This is a common defense evasion technique used by Wannacry for example.
+
+Technique IDs: 
+    - T1564.001
+
+KQL query: |
+    DeviceProcessEvents
+    | where FileName has "attrib.exe" and ProcessCommandLine contains "+h"

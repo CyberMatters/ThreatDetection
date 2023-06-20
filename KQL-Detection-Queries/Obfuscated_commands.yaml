@@ -1,0 +1,43 @@
+Detection rule: Obfuscated_commands
+
+Description: |
+    This rule detects the presence of obfuscation caracters such as:
+    - the caret (e.g. c^a^r^e^t)
+    - the quote escape (e.g. q"u"o"t"e)
+    - the concatenation (e.g. "con"+"ca" + "tenation")
+
+    Attackers use these techniques to escape non flexible detection rule trying to identify malicious commands.
+    Actions to perform:
+    - Analyze the commandLine
+
+    References: https://www.fireeye.com/content/dam/fireeye-www/blog/pdfs/dosfuscation-report.pdf
+
+Technique IDs: 
+    - T1140
+
+KQL query: |
+    //... Whitelist ...
+    //
+    let concatenation_wl = dynamic([]);
+    let caret_wl = dynamic([]);
+    let quote_escape_wl = dynamic([]);
+    //
+    //... Regex for obfuscation characters ...
+    //
+    let concatenation = "(?:\u0022|') *\\+ *(?:\u0022|')";
+    let caret = "\\^";
+    let quote_escape = "\"[a-zA-Z]\"";
+    //
+    //... Query ...
+    //
+    DeviceProcessEvents
+    | where ProcessCommandLine matches regex concatenation or InitiatingProcessCommandLine matches regex concatenation or ProcessCommandLine matches regex caret or InitiatingProcessCommandLine matches regex caret or ProcessCommandLine matches regex quote_escape or InitiatingProcessCommandLine matches regex quote_escape
+    | where not (ProcessCommandLine has_any (concatenation_wl) or ProcessCommandLine has_any (caret_wl) or ProcessCommandLine has_any (quote_escape_wl))
+    | extend deobfuscated_command = ProcessCommandLine
+    //COUNTING OBFUSCATION CHARACTERS
+    | extend count_of_concatenation = countof(ProcessCommandLine,concatenation,"regex")
+    | extend count_of_caret = countof(ProcessCommandLine,caret,"regex")
+    | extend count_of_quote_escape = countof(ProcessCommandLine,quote_escape,"regex")
+    | extend total_obfucation_characters = count_of_concatenation + count_of_caret + count_of_quote_escape
+    | where total_obfucation_characters > 3
+    | project TimeGenerated, total_obfucation_characters,count_of_concatenation,count_of_caret,count_of_quote_escape,ProcessCommandLine, FolderPath, DeviceName,AccountUpn,SHA256

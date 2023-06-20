@@ -1,0 +1,35 @@
+Detection rule: Newly_created_account_being_bruteforced_before_MFA_has_been_setup
+
+Description: |
+    APT29 has been seen bruteforcing newly created account which MFA has not been yet setup, this allow the attacker to enroll their own device in MFA.
+
+    More info below:
+
+    https://www.bleepingcomputer.com/news/security/russian-apt29-hackers-abuse-azure-services-to-hack-microsoft-365-users/
+    Action to perform:
+
+    - Analyze the source IP
+    - Does the source location match the users location ?
+    - Is there a successful sign in after all the failures ?
+
+Technique IDs: 
+    - T1110
+    - T1078
+
+KQL query: |
+    AuditLogs
+    | extend UserPrincipalName = trim(@"\s",UserPrincipalName)
+    | project UserPrincipalName;
+    AuditLogs
+    | extend UserPrincipalName = tostring(TargetResources[0].userPrincipalName)
+    | where OperationName has "add user" //user creation
+    | summarize by UserPrincipalName
+    | join kind = inner (SigninLogs
+        | where ResultType != 0
+        | where ConditionalAccessPolicies[0].result <> "success"
+        | where AuthenticationRequirement <> "multiFactorAuthentication"
+        | where AppDisplayName <> "Windows Sign In"
+        | summarize count(), make_set(IPAddress) by UserPrincipalName, ClientAppUsed, AppDisplayName
+        | where count_ > 10)
+        on UserPrincipalName
+    | project-away UserPrincipalName1

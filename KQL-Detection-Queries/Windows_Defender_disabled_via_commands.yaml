@@ -1,0 +1,24 @@
+Detection rule: Windows_Defender_disabled_via_commands
+
+Description: |
+    This rule triggers an alert when Windows Defender is disabled via commands.
+    This is a situation where an attacker impairs our defense before resuming his offensive operations.
+
+    More info below: 
+    - https://www.securonix.com/blog/detecting-steepmaverick-new-covert-attack-campaign-targeting-military-contractors/
+    - https://technoresult.com/how-to-disable-windows-defender-using-powershell-command-line/
+
+Technique IDs: 
+    - T1562.001
+
+KQL query: |
+    let MpCmdRun_exe_command = DeviceProcessEvents
+        | where FileName has "MpCmdRun.exe"
+        | where ProcessCommandLine has_any ("RemoveDefinitions");
+    let sc_exe_command = DeviceProcessEvents
+        | where FileName has "sc.exe"
+        | where ProcessCommandLine contains @"WinDefend"
+        | where ProcessCommandLine has_any ("stop", "disabled");
+    let powershell_command = DeviceProcessEvents
+        | where ProcessCommandLine has_all ("Set-MpPreference", "DisableRealtimeMonitoring");
+    union MpCmdRun_exe_command, sc_exe_command, powershell_command

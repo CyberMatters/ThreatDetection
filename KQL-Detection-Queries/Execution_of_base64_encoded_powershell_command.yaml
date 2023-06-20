@@ -1,0 +1,17 @@
+Detection rule: Execution_of_base64_encoded_powershell_command
+
+Description: |
+    This rule detects the execution of base64 encoded powershell command and decodes the command for visibility.
+
+Technique IDs: 
+    - T1059.001
+    - T1140
+    - T1027
+
+KQL query: |
+    DeviceProcessEvents
+    | where ProcessCommandLine has_any ("powershell", "pwsh.exe") 
+        and ProcessCommandLine has "EncodedCommand"
+    | extend Base64 = replace(@"[\x0d\x0a]", "", extract(@"[A-Za-z0-9+/=\x0d\x0a]{50,1000}", 0, ProcessCommandLine))
+    | extend Base64DecodedString = replace(@"[^\x20-\x7e]", "", base64_decode_tostring(Base64))
+    | extend DecodedSubString = substring(Base64DecodedString, 0, 255)

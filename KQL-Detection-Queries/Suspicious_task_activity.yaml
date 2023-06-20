@@ -1,0 +1,13 @@
+Detection rule: Suspicious_task_activity
+
+Description: |
+    This rule will detects a create/change/run schedule task activity that could be malicious.
+
+Technique IDs: 
+    - T1053.002
+    - T1053.005
+
+KQL query: |
+    DeviceProcessEvents
+    | where ProcessCommandLine has_any ("schtasks.exe","at.exe") and ProcessCommandLine has_any ("/change","/create","/run")
+    | summarize make_set(DeviceName),make_set(AccountName), dcount(TimeGenerated), make_set(TimeGenerated) by ProcessCommandLine, InitiatingProcessCommandLine, InitiatingProcessParentFileName

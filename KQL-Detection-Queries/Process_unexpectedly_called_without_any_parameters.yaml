@@ -1,0 +1,19 @@
+Detection rule: Process_unexpectedly_called_without_any_parameters
+
+Description: |
+    This rule will trigger an alert when a process that usually contains parameters is exectued without any.
+    This could be a sign of process injection during which an attacker spawn a legit process without argument and suspend it, 
+    before unallocating the code present in the process memory and replacing it with the malicious one.
+
+    Actions to perform:
+    - Check the process lineage and its legitimacy.
+    - Pivot from there and follow the Malware reaction plan."
+
+Technique IDs: 
+    - T1055
+
+KQL query: |
+    let process = dynamic(["rundll32.exe", "regsvr32.exe", "regasm.exe", "regsvcs.exe", "werfault.exe", "schtasks.exe", "sc.exe", "at.exe", "onedrive.exe", "backgroundtaskhost.exe"]);
+    DeviceProcessEvents
+    | where FileName has_any (process)
+    | where not (ProcessCommandLine contains " ")

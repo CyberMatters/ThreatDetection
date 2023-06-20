@@ -1,0 +1,21 @@
+Detection rule: Possible_remote_system_discovery_via_Powershell_cmdlet_Test-NetConnection
+
+Description: |
+    This rule will trigger an alert when the the cmdlet Test-NetConnection is used on a system.
+    This command can be used to test the connectivity to specified IP addresses and ports.
+    Example of commands can be found below:
+    - https://docs.microsoft.com/en-us/powershell/module/nettcpip/test-netconnection?view=windowsserver2022-ps
+
+    Although, the cmdlet is far from having as many options as other specialized tools like nmap, powershell is present on every single device,
+    which takes away the need to download additionnal tool and risking being caught by the blue team.
+
+    See also : "Cybersécurité et PowerShell: De l'attaque à la défense du système d'information" written by Etienne Ladent, published in 2022
+
+Technique IDs: 
+    - T1018
+
+KQL query: |
+    DeviceEvents
+    | where ActionType has "PowerShellCommand"
+    | extend Command = tostring(parse_json(AdditionalFields).Command)
+    | where Command has "Test-NetConnection"

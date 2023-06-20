@@ -1,0 +1,63 @@
+Detection rule: Indirect_Command_Execution_-_WSL_proxy_execution
+
+Description: |
+    This rule will trigger an alert if WSL is used to execute a binary file.
+    Adversaries may abuse these features for Defense Evasion, specifically to perform arbitrary execution while subverting detections and/or mitigation controls 
+    (such as Group Policy) that limit/prevent the usage of cmd or file extensions more commonly associated with malicious payloads.
+    
+    Exemple of process lineage :
+
+    stage1.exe > cmd.exe > wsl.exe > stage2.exe
+
+    Actions to perform:
+    - analyze the Command Line that included the -e or --exec switch.
+    - analyze the executed program (stage 2)
+    - analyze the process lineage (stage 1)
+    - wsl will be legitimate, look at the (grand)parent"
+
+Technique IDs: 
+    - T1202
+
+KQL query: |
+    // for unknown reason, the tests show that Log Analytics can sometimes parse command lines strangely and add random spaces between switches
+    let commandLine = dynamic(["wsl.exe -e", "wsl.exe --exec", @"wsl.exe  -e", @"wsl.exe  --exec"]);
+    let commandLine_wl = dynamic(["wsl.exe -e wslpath"]);
+    DeviceProcessEvents
+    | where InitiatingProcessCommandLine has_any (commandLine)
+    | join kind=inner (DeviceProcessEvents
+        | where TimeGenerated > ago (7d)
+        | project
+            DeviceName,
+            FileName,
+            ProcessId,
+            InitiatingProcessParentSHA1=SHA1,
+            InitiatingProcessParentSHA256=SHA256,
+            InitiatingProcessParentCommandLine=ProcessCommandLine)
+        on
+        DeviceName,
+        $left.InitiatingProcessParentFileName == $right.FileName,
+        $left.InitiatingProcessParentId == $right.ProcessId
+    | where not (InitiatingProcessCommandLine has_any (commandLine_wl))
+    | where not (InitiatingProcessParentFileName has "code.exe" and InitiatingProcessParentCommandLine contains @"\AppData\Local\Programs\Microsoft VS Code\")
+    | project
+        TimeGenerated,
+        DeviceName,
+        InitiatingProcessParentFileName,
+        InitiatingProcessParentId,
+        InitiatingProcessParentCommandLine,
+        InitiatingProcessParentSHA1,
+        InitiatingProcessParentSHA256,
+        InitiatingProcessFolderPath,
+        InitiatingProcessFileName,
+        InitiatingProcessAccountName,
+        InitiatingProcessId,
+        InitiatingProcessSHA1,
+        InitiatingProcessSHA256,
+        InitiatingProcessCommandLine,
+        FolderPath,
+        FileName,
+        ProcessId,
+        SHA1,
+        SHA256,
+        ProcessCommandLine,
+        AccountName

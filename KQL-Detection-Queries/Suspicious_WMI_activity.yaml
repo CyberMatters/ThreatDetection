@@ -1,0 +1,21 @@
+Detection rule: Suspicious_WMI_activity
+
+Description: |
+    This rule will trigger an alert when a rare WMI activity is found.
+    This could be a sign of execution, persistence activity or lateral movement for example
+
+Technique IDs: 
+    - T1047
+    - T1546.003
+    - T1021.006
+    - T1021.006
+
+KQL query: |
+    DeviceProcessEvents
+    | where (ProcessCommandLine contains "wmic" and (
+        ProcessCommandLine contains "/node" or //remoting
+        ProcessCommandLine contains "process call create" or // remoting
+        ProcessCommandLine contains "Invoke-WmiCommand"
+        ))
+        or (InitiatingProcessFileName has "wmiprvse.exe" and InitiatingProcessParentFileName has_any ("powershell.exe","cmd.exe")) // CommandLineEventConsumers
+        or (InitiatingProcessFileName has "scrcons.exe") //ActiveScriptConsumers
